@@ -1,10 +1,18 @@
 """Testes para dat2csv.utils."""
 import hashlib
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
-from dat2csv.utils import calcular_hash, criar_backup, inspecionar_arquivo
+from dat2csv.utils import (
+    calcular_hash,
+    criar_backup,
+    inspecionar_arquivo,
+    imprimir_inspecao,
+    _format_size,
+    _truncate,
+)
 
 
 # ── calcular_hash ──────────────────────────────────────────────────────────────
@@ -176,3 +184,123 @@ class TestInspecionarArquivo:
         conteudo_antes = dat_simples.read_bytes()
         inspecionar_arquivo(dat_simples)
         assert dat_simples.read_bytes() == conteudo_antes
+
+
+# ── criar_backup — caminho de erro (OSError) ──────────────────────────────────
+
+class TestCriarBackupOSError:
+    def test_retorna_none_e_imprime_aviso_quando_move_falha(self, tmp_path, capsys):
+        """Se shutil.move falhar com OSError, retorna None e avisa no stderr."""
+        arq = tmp_path / "saida.csv"
+        arq.write_text("dados\n")
+
+        with patch("dat2csv.utils.shutil.move", side_effect=OSError("disco cheio")):
+            resultado = criar_backup(arq)
+
+        assert resultado is None
+        stderr = capsys.readouterr().err
+        assert "Aviso" in stderr
+        assert "saida.csv" in stderr
+
+
+# ── _format_size ──────────────────────────────────────────────────────────────
+
+class TestFormatSize:
+    def test_exibe_kb_para_arquivo_menor_que_1mb(self):
+        """Valores abaixo de 1 MB devem ser formatados em KB."""
+        assert _format_size(512 * 1024) == "512.0 KB"
+
+    def test_exibe_mb_para_arquivo_maior_ou_igual_a_1mb(self):
+        """Valores >= 1 MB devem ser formatados em MB (cobre branch L108-110)."""
+        assert _format_size(2 * 1024 * 1024) == "2.0 MB"
+
+    def test_exatamente_1mb(self):
+        """Exatamente 1 MB (1_048_576 bytes) deve usar a unidade MB."""
+        assert _format_size(1_048_576) == "1.0 MB"
+
+
+# ── _truncate ─────────────────────────────────────────────────────────────────
+
+class TestTruncate:
+    def test_string_curta_nao_e_truncada(self):
+        """Strings com até 50 caracteres passam intactas."""
+        assert _truncate("abc") == "abc"
+        assert _truncate("a" * 50) == "a" * 50
+
+    def test_string_longa_e_truncada_com_reticencias(self):
+        """Strings com mais de 50 caracteres são cortadas e recebem '…' (cobre L114)."""
+        longa = "x" * 60
+        resultado = _truncate(longa)
+        assert resultado == "x" * 50 + "…"
+        assert len(resultado) == 51  # 50 chars + 1 reticência
+
+
+# ── imprimir_inspecao ─────────────────────────────────────────────────────────
+
+class TestImprimirInspecao:
+    def _info_base(self, tmp_path: Path) -> dict:
+        """Retorna um dict de inspeção mínimo para testes de impressão."""
+        arq = tmp_path / "f.dat"
+        arq.write_text("1,A\n2,B\n", encoding="utf-8")
+        return inspecionar_arquivo(arq, encoding="utf-8")
+
+    def test_saida_contem_nome_do_arquivo(self, tmp_path, capsys):
+        info = self._info_base(tmp_path)
+        imprimir_inspecao(info)
+        assert "f.dat" in capsys.readouterr().out
+
+    def test_saida_contem_encoding(self, tmp_path, capsys):
+        info = self._info_base(tmp_path)
+        imprimir_inspecao(info)
+        assert "utf-8" in capsys.readouterr().out
+
+    def test_aviso_short_rows_exibido(self, dat_linhas_irregulares, capsys):
+        """Quando há linhas curtas, a mensagem de atenção deve aparecer."""
+        info = inspecionar_arquivo(dat_linhas_irregulares)
+        imprimir_inspecao(info)
+        assert "Atenção" in capsys.readouterr().out
+
+    def test_sem_aviso_quando_linhas_uniformes(self, dat_simples, capsys):
+        """Sem linhas curtas, a mensagem de atenção não deve aparecer."""
+        info = inspecionar_arquivo(dat_simples)
+        imprimir_inspecao(info)
+        assert "Atenção" not in capsys.readouterr().out
+
+    def test_mensagem_clean_com_colunas_vazias(self, dat_colunas_vazias, capsys):
+        """Linha '🔧 Com --clean: N colunas...' deve aparecer quando há vazias."""
+        info = inspecionar_arquivo(dat_colunas_vazias, aplicar_clean=True)
+        imprimir_inspecao(info)
+        assert "--clean" in capsys.readouterr().out
+
+    def test_mensagem_clean_sem_colunas_vazias(self, dat_simples, capsys):
+        """'nenhuma coluna 100% vazia' deve aparecer quando empty_cols é vazio."""
+        info = inspecionar_arquivo(dat_simples, aplicar_clean=True)
+        imprimir_inspecao(info)
+        assert "nenhuma coluna" in capsys.readouterr().out
+
+    def test_amostra_exibida(self, dat_simples, capsys):
+        """A seção de amostra deve listar as linhas com prefixo [N]."""
+        info = inspecionar_arquivo(dat_simples)
+        imprimir_inspecao(info)
+        saida = capsys.readouterr().out
+        assert "[1]" in saida
+        assert "[3]" in saida
+
+    def test_campo_longo_truncado_na_amostra(self, tmp_path, capsys):
+        """Campos com mais de 50 chars devem aparecer truncados na amostra."""
+        dat = tmp_path / "longo.dat"
+        campo_longo = "Z" * 60
+        dat.write_text(f"1,{campo_longo}\n", encoding="utf-8")
+        info = inspecionar_arquivo(dat, encoding="utf-8")
+        imprimir_inspecao(info)
+        saida = capsys.readouterr().out
+        assert "Z" * 50 + "…" in saida
+        assert "Z" * 60 not in saida
+
+    def test_reticencias_quando_mais_de_seis_campos(self, tmp_path, capsys):
+        """Linhas com mais de 6 campos devem ter ',…' ao final na amostra."""
+        dat = tmp_path / "largo.dat"
+        dat.write_text("1,2,3,4,5,6,7,8\n", encoding="utf-8")
+        info = inspecionar_arquivo(dat, encoding="utf-8")
+        imprimir_inspecao(info)
+        assert ",…" in capsys.readouterr().out

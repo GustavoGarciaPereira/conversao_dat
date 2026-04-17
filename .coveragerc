@@ -1,0 +1,12 @@
+[run]
+source = dat2csv
+omit =
+    dat2csv/__main__.py
+    dat2csv/cli.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    def main\(\):
+    ^\s*\.\.\.

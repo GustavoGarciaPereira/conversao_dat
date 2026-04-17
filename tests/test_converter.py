@@ -1,6 +1,7 @@
 """Testes para dat2csv.converter."""
 import csv
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -62,6 +63,27 @@ class TestParseDat:
         rows, _ = _parse_dat(dat, encoding="utf-8-sig")
 
         assert rows[0][0] == "1"
+
+    def test_stopiteration_em_csv_reader_e_ignorada(self, tmp_path):
+        """Se csv.reader levantar StopIteration inesperadamente, a linha é ignorada.
+
+        Este caminho é defensivo e não ocorre com inputs normais; usamos mock
+        para garantir cobertura do except StopIteration (L27-28).
+        """
+        dat = tmp_path / "qualquer.dat"
+        dat.write_text("1,A\n2,B\n", encoding="utf-8")
+
+        # Faz csv.reader retornar um iterador vazio para cada chamada
+        iterador_vazio = MagicMock()
+        iterador_vazio.__iter__ = lambda s: iter([])
+        iterador_vazio.__next__ = MagicMock(side_effect=StopIteration)
+
+        with patch("dat2csv.converter.csv.reader", return_value=iterador_vazio):
+            rows, max_cols = _parse_dat(dat)
+
+        # Com o reader sempre lançando StopIteration, nenhuma linha é processada
+        assert rows == []
+        assert max_cols == 0
 
 
 # ── normalização de linhas irregulares ────────────────────────────────────────
