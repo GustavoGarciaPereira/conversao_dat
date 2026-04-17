@@ -14,6 +14,8 @@ e verificação de integridade via hash SHA256.
 
 ## Instalação
 
+$\color{red}{\text{Atenção: é necessário ter o 'pip' instalado em sua máquina}}$
+--- 
 **A partir do repositório local:**
 
 ```bash
