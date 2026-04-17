@@ -29,6 +29,11 @@ classifiers = [
     "Topic :: Utilities",
 ]
 
+[project.urls]
+Homepage = "https://github.com/GustavoGarciaPereira/conversao_dat"
+Repository = "https://github.com/GustavoGarciaPereira/conversao_dat"
+Issues = "https://github.com/GustavoGarciaPereira/conversao_dat/issues"
+
 [project.scripts]
 dat2csv = "dat2csv.cli:main"
 
