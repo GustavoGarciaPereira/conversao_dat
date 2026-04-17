@@ -17,7 +17,7 @@ e verificação de integridade via hash SHA256.
 **A partir do repositório local:**
 
 ```bash
-git clone https://github.com/[SEU USUARIO]/dat2csv.git
+git clone https://github.com/GustavoGarciaPereira/dat2csv.git
 cd dat2csv
 pip install -e .
 ```
@@ -25,7 +25,7 @@ pip install -e .
 **A partir do GitHub (sem clonar):**
 
 ```bash
-pip install git+https://github.com/[SEU USUARIO]/dat2csv.git
+pip install git+https://github.com/GustavoGarciaPereira/dat2csv.git
 ```
 
 Após a instalação, o comando `dat2csv` estará disponível no terminal.
