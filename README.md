@@ -28,13 +28,14 @@ pip install -e .
 pip install git+https://github.com/GustavoGarciaPereira/conversao_dat.git
 ```
 
+
 Após a instalação, o comando `dat2csv` estará disponível no terminal.
 
 ---
 
 ## Uso — linha de comando
 
-### Conversão básica
+### Conversão básica (CMD Linux)
 
 ```bash
 dat2csv dados.dat
@@ -43,7 +44,6 @@ dat2csv dados.dat
 dat2csv dados.dat resultados/limpo.csv
 # Saída: resultados/limpo.csv
 ```
-
 ```
 Arquivo convertido com sucesso!
   Entrada:  dados.dat
@@ -51,6 +51,20 @@ Arquivo convertido com sucesso!
   Linhas:   1280
   Colunas:  147
 ```
+
+### Conversão básica (PowerShell Windows)
+
+```bash
+python -m dat2csv.cli dados.dat
+```
+```
+Arquivo convertido com sucesso!
+  Entrada:  dados.dat
+  Saída:    dados.csv
+  Linhas:   1280
+  Colunas:  147
+```
+
 
 ### Remover colunas 100% vazias (`--clean`)
 
