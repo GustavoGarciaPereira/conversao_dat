@@ -1,2 +1,26 @@
 .vscode/settings.json
 data_dat/survey_512758_SPSS_data_file.dat
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Build / packaging
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+.venv/
+
+# pytest cache
+.pytest_cache/
+
+# Outputs gerados localmente
+*.csv
+
