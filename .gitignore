@@ -24,3 +24,7 @@ venv/
 # Outputs gerados localmente
 *.csv
 
+# Dados de pesquisa e diretórios de teste local
+data_dat/
+test2/
+
