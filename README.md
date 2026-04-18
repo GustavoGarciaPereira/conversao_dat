@@ -38,8 +38,11 @@ cd conversao_dat
 git pull
 pip install -e .
 
-# Se instalou via git+ URL
+# Se instalou via git+ URL (Linux / macOS)
 pip install --upgrade git+https://github.com/GustavoGarciaPereira/conversao_dat.git
+
+# Windows — forçar re-download (PowerShell)
+pip install --upgrade --force-reinstall --no-cache-dir git+https://github.com/GustavoGarciaPereira/conversao_dat.git
 ```
 
 Após a instalação, o comando `dat2csv` estará disponível no terminal.
