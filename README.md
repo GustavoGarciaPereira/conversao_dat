@@ -4,23 +4,23 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Tests](https://img.shields.io/badge/tests-40%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-86%20passed-brightgreen)
 
 Converte arquivos `.dat` gerados por plataformas de pesquisa (LimeSurvey, SPSS, etc.)
-para CSV limpo, com suporte a aspas simples, detecção de colunas vazias, backup automático
-e verificação de integridade via hash SHA256.
+para CSV limpo, com suporte a aspas simples, detecção de colunas vazias, backup automático,
+verificação de integridade via hash SHA256 e metadados SPSS (cabeçalho + rótulos de valor).
 
 ---
 
 ## Instalação
 
-$\color{red}{\text{Atenção: é necessário ter o 'pip' instalado em sua máquina}}$
---- 
+> **Atenção:** é necessário ter o `pip` instalado na sua máquina.
+
 **A partir do repositório local:**
 
 ```bash
 git clone https://github.com/GustavoGarciaPereira/conversao_dat.git
-cd dat2csv
+cd conversao_dat
 pip install -e .
 ```
 
@@ -30,6 +30,17 @@ pip install -e .
 pip install git+https://github.com/GustavoGarciaPereira/conversao_dat.git
 ```
 
+**Atualizar para a versão mais recente:**
+
+```bash
+# Se instalou via git clone (modo editável)
+cd conversao_dat
+git pull
+pip install -e .
+
+# Se instalou via git+ URL
+pip install --upgrade git+https://github.com/GustavoGarciaPereira/conversao_dat.git
+```
 
 Após a instalação, o comando `dat2csv` estará disponível no terminal.
 
@@ -37,7 +48,7 @@ Após a instalação, o comando `dat2csv` estará disponível no terminal.
 
 ## Uso — linha de comando
 
-### Conversão básica (CMD Linux)
+### Conversão básica (Linux / macOS)
 
 ```bash
 dat2csv dados.dat
@@ -46,6 +57,7 @@ dat2csv dados.dat
 dat2csv dados.dat resultados/limpo.csv
 # Saída: resultados/limpo.csv
 ```
+
 ```
 Arquivo convertido com sucesso!
   Entrada:  dados.dat
@@ -57,8 +69,9 @@ Arquivo convertido com sucesso!
 ### Conversão básica (PowerShell Windows)
 
 ```bash
-python -m dat2csv.cli dados.dat
+python -m dat2csv dados.dat
 ```
+
 ```
 Arquivo convertido com sucesso!
   Entrada:  dados.dat
@@ -67,6 +80,45 @@ Arquivo convertido com sucesso!
   Colunas:  147
 ```
 
+### Usar metadados SPSS (`--sps`)
+
+Adiciona cabeçalho com os nomes das variáveis a partir de um arquivo `.sps`:
+
+```bash
+dat2csv dados.dat --sps sintaxe.sps
+```
+
+```
+Arquivo convertido com sucesso!
+  Entrada:  dados.dat
+  Saída:    dados.csv
+  Linhas:   1280
+  Colunas:  147
+  Metadados .sps: sintaxe.sps
+```
+
+### Substituir códigos por rótulos (`--sps --apply-labels`)
+
+Substitui valores como `AO01`, `AO02` pelos textos definidos no `.sps`:
+
+```bash
+dat2csv dados.dat --sps sintaxe.sps --apply-labels
+```
+
+```
+Arquivo convertido com sucesso!
+  Entrada:  dados.dat
+  Saída:    dados.csv
+  Linhas:   1280
+  Colunas:  147
+  Metadados .sps: sintaxe.sps
+```
+
+### Suprimir cabeçalho (`--no-header`)
+
+```bash
+dat2csv dados.dat --sps sintaxe.sps --no-header
+```
 
 ### Remover colunas 100% vazias (`--clean`)
 
@@ -100,9 +152,9 @@ dat2csv dados.dat --inspect
    Serão preenchidas com vazio na conversão.
 
 📋 Amostra (5 primeiras linhas):
-  [1] 1 1  en  651   ...
-  [2] 2 0  en  984   ...
-  [3] 3 2  en  125   ...
+  [1] 1,,1,pt,1616738727,AO01,…
+  [2] 2,,0,pt,1733525872
+  [3] 3,,2,pt,1445270123,AO02,…
 ```
 
 ### Simular limpeza antes de converter (`--inspect --clean`)
@@ -151,6 +203,15 @@ result = convert("dados.dat", "resultado.csv")
 print(result)
 # {'rows': 1280, 'columns': 147, 'backup': None}
 
+# Com metadados SPSS (cabeçalho + substituição de labels)
+result = convert(
+    "dados.dat", "resultado.csv",
+    sps_path="sintaxe.sps",
+    apply_labels=True,
+)
+print(result)
+# {'rows': 1280, 'columns': 147, 'backup': None}
+
 # Com limpeza de colunas vazias
 result = convert("dados.dat", "resultado.csv", clean=True)
 print(result)
@@ -159,6 +220,7 @@ print(result)
 
 ```python
 from dat2csv.utils import inspecionar_arquivo, calcular_hash
+from dat2csv.sps import parse_sps
 
 # Inspecionar sem gerar arquivo
 info = inspecionar_arquivo("dados.dat", aplicar_clean=True)
@@ -168,6 +230,11 @@ print(f"Colunas vazias: {len(info['empty_cols'])}")
 # Calcular hash
 digest = calcular_hash("dados.dat")
 print(f"SHA256: {digest}")
+
+# Ler metadados do .sps diretamente
+meta = parse_sps("sintaxe.sps")
+print(meta["variable_labels"])   # {'V1': 'id', 'V2': 'Género:', ...}
+print(meta["value_labels"]["V6"])  # {'AO01': 'Portuguesa', 'AO02': 'Brasileira', ...}
 ```
 
 ---
@@ -195,8 +262,9 @@ Exemplo de linha válida:
 |---|---|
 | **Backup automático** | Se o arquivo de saída já existir, é renomeado para `<nome>_backup_YYYYMMDD_HHMMSS.csv` antes de qualquer escrita |
 | **Hash SHA256** | Flag `--hash` calcula e exibe o hash do arquivo de entrada; útil para auditoria e comparação de versões |
-| **Somente leitura da entrada** | O arquivo `.dat` original nunca é modificado |
+| **Somente leitura da entrada** | Os arquivos `.dat` e `.sps` originais nunca são modificados |
 | **Falha segura no backup** | Erro ao criar backup gera aviso no stderr, mas a conversão prossegue normalmente |
+| **Falha segura no .sps** | `.sps` ausente ou ilegível gera aviso no stderr; conversão continua sem metadados |
 
 ---
 
@@ -204,6 +272,9 @@ Exemplo de linha válida:
 
 | Flag | Descrição |
 |---|---|
+| `--sps ARQUIVO.sps` | Arquivo de sintaxe SPSS com nomes e rótulos das variáveis |
+| `--apply-labels` | Substitui códigos pelos rótulos de valor definidos no `.sps` (requer `--sps`) |
+| `--no-header` | Suprime a linha de cabeçalho mesmo quando `--sps` é fornecido |
 | `--inspect` | Analisa o arquivo sem gerar CSV |
 | `--clean` | Remove colunas 100% vazias; com `--inspect`, simula a remoção |
 | `--hash` | Exibe o hash SHA256 do arquivo de entrada |
