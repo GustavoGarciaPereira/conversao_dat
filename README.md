@@ -4,7 +4,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Tests](https://img.shields.io/badge/tests-86%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-117%20passed-brightgreen)
 
 Converte arquivos `.dat` gerados por plataformas de pesquisa (LimeSurvey, SPSS, etc.)
 para CSV limpo, com suporte a aspas simples, detecção de colunas vazias, backup automático,
@@ -160,6 +160,95 @@ dat2csv dados.dat --inspect
   [3] 3,,2,pt,1445270123,AO02,…
 ```
 
+### Preview do CSV (`--preview`)
+
+Exibe as primeiras linhas do CSV que seria gerado, sem criar arquivo. Útil para verificar rapidamente o resultado da conversão.
+
+A saída é formatada como tabela alinhada (poucos campos) ou lista vertical (muitos campos). Datasets com mais de 20 colunas mudam automaticamente para o modo vertical. Use `--raw` para obter o CSV bruto.
+
+```bash
+dat2csv dados.dat --preview
+```
+
+```
++---+-------+-----+
+| 1 | dois  | 3   |
++---+-------+-----+
+| 4 | cinco | 6   |
+| 7 | oito  | 9   |
++---+-------+-----+
+```
+
+```bash
+dat2csv dados.dat --sps sintaxe.sps --apply-labels --preview 3
+```
+
+```
++----+-----------+-------------+
+| id | pais      | genero      |
++----+-----------+-------------+
+| 1  | Portugal  | Feminino    |
+| 2  | Brasil    | Não binário |
+| 3  | Espanha   | Masculino   |
++----+-----------+-------------+
+```
+
+```bash
+dat2csv dados.dat --sps sintaxe.sps --apply-labels --preview 3 --raw
+```
+
+```
+id,pais,genero
+1,Portugal,Feminino
+2,Brasil,Não binário
+3,Espanha,Masculino
+```
+
+### Preview com datasets de muitas colunas (modo vertical automático)
+
+Quando o CSV tiver mais de 20 colunas, o preview muda automaticamente para o modo vertical,
+exibindo cada linha como uma lista `nome_coluna : valor`. Use `--cols N` para controlar
+quantas colunas são exibidas por linha (padrão: 10).
+
+```bash
+dat2csv survey.dat --sps sintaxe.sps --apply-labels --preview 2
+```
+
+```
+── Linha 1 ──────────────────────────────────────────────────────────────────────────────
+  id            : 1
+  submitdate    : 
+  lastpage      : 1
+  startlanguage : pt
+  seed          : 1616738727
+  Nacionalidade : Portuguesa
+  genero        : Feminino
+  idade         : 25
+  pais          : Portugal
+  escolaridade  : Superior
+  (+ 165 colunas omitidas de 175)
+
+── Linha 2 ──────────────────────────────────────────────────────────────────────────────
+  id            : 2
+  ...
+  (+ 165 colunas omitidas de 175)
+```
+
+```bash
+# Ver apenas 5 colunas por linha
+dat2csv survey.dat --sps sintaxe.sps --apply-labels --preview 2 --cols 5
+```
+
+```
+── Linha 1 ──────────────────────────────────────────────────────────────────────────────
+  id            : 1
+  submitdate    : 
+  lastpage      : 1
+  startlanguage : pt
+  seed          : 1616738727
+  (+ 170 colunas omitidas de 175)
+```
+
 ### Simular limpeza antes de converter (`--inspect --clean`)
 
 ```bash
@@ -234,6 +323,14 @@ print(f"Colunas vazias: {len(info['empty_cols'])}")
 digest = calcular_hash("dados.dat")
 print(f"SHA256: {digest}")
 
+# Preview do CSV (sem criar arquivo)
+from dat2csv.utils import preview_csv_preview
+preview = preview_csv_preview("dados.dat", sps_path="sintaxe.sps", n=3)
+print(preview)
+# id,nome,genero
+# 1,dois,3
+# 4,cinco,6
+
 # Ler metadados do .sps diretamente
 meta = parse_sps("sintaxe.sps")
 print(meta["variable_labels"])   # {'V1': 'id', 'V2': 'Género:', ...}
@@ -279,6 +376,9 @@ Exemplo de linha válida:
 | `--apply-labels` | Substitui códigos pelos rótulos de valor definidos no `.sps` (requer `--sps`) |
 | `--no-header` | Suprime a linha de cabeçalho mesmo quando `--sps` é fornecido |
 | `--inspect` | Analisa o arquivo sem gerar CSV |
+| `--preview [N]` | Exibe as primeiras N linhas do CSV que seria gerado, sem criar arquivo (padrão: 5). Não pode ser usado com `--inspect`. |
+| `--raw` | Com `--preview`, imprime o CSV bruto (sem formatação de tabela). |
+| `--cols N` | Número máximo de colunas a exibir no preview (padrão: 10). No modo horizontal trunca a tabela; no modo vertical lista apenas as primeiras N colunas por linha. |
 | `--clean` | Remove colunas 100% vazias; com `--inspect`, simula a remoção |
 | `--hash` | Exibe o hash SHA256 do arquivo de entrada |
 | `--no-backup` | Desabilita o backup automático do arquivo de saída |

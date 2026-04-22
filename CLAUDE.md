@@ -14,7 +14,7 @@ entendam rapidamente a estrutura, as convenções e as decisões de design deste
 | **Público-alvo** | Pesquisadores e usuários não técnicos |
 | **Python mínimo** | 3.10 |
 | **Dependências externas** | Nenhuma (somente biblioteca padrão) |
-| **Testes** | 78 passando, cobertura 100% |
+| **Testes** | 117 passando, cobertura 100% |
 
 **Propósito:** Converter arquivos `.dat` gerados por plataformas de pesquisa (LimeSurvey, SPSS,
 Sniffy) para CSV limpo. Os diferenciais em relação a um simples `split(',')` são:
@@ -25,6 +25,7 @@ Sniffy) para CSV limpo. Os diferenciais em relação a um simples `split(',')` s
 - Modo inspeção (`--inspect`) que analisa o arquivo sem gerar saída
 - Limpeza opcional de colunas 100% vazias (`--clean`)
 - Suporte a metadados SPSS (`--sps`): cabeçalho com nomes das variáveis e substituição de códigos por rótulos
+- Preview inteligente (`--preview`): tabela horizontal para poucos campos, modo vertical automático para datasets com mais de 20 colunas; `--cols N` controla quantas colunas exibir
 
 ---
 
@@ -65,7 +66,7 @@ conversao_dat/
 | Módulo | Responsabilidade |
 |---|---|
 | `converter.py` | Parse do `.dat` (`_parse_dat`), substituição de labels, limpeza de colunas, escrita do CSV |
-| `utils.py` | Hash de integridade, backup com timestamp, inspeção sem saída, formatação de terminal |
+| `utils.py` | Hash de integridade, backup com timestamp, inspeção sem saída, preview do CSV, formatação de tabela, formatação de terminal |
 | `sps.py` | Parser de sintaxe SPSS: extrai `variable_labels` e `value_labels` |
 | `cli.py` | Interface argparse, validação de argumentos, saída no terminal |
 
@@ -132,6 +133,12 @@ dat2csv dados.dat
 # Com metadados SPSS (cabeçalho + substituição de labels)
 dat2csv dados.dat --sps sintaxe.sps --apply-labels
 
+# Preview das primeiras linhas (sem criar arquivo)
+dat2csv dados.dat --preview 3
+
+# Preview de dataset com muitas colunas — modo vertical automático, 5 colunas por linha
+dat2csv survey.dat --sps sintaxe.sps --apply-labels --preview 2 --cols 5
+
 # Inspecionar + simular limpeza
 dat2csv dados.dat --inspect --clean
 
@@ -164,6 +171,9 @@ twine upload dist/*
 | `--sps` | `None` | Arquivo `.sps` com metadados SPSS |
 | `--apply-labels` | `False` | Substitui códigos pelos rótulos do `.sps` (requer `--sps`) |
 | `--no-header` | `False` | Suprime cabeçalho mesmo quando `--sps` é fornecido |
+| `--preview` | `None` | Exibe as primeiras N linhas do CSV que seria gerado, sem criar arquivo (padrão: 5). Não pode ser usado com `--inspect`. |
+| `--raw` | `False` | Com `--preview`, imprime o CSV bruto (sem formatação de tabela). |
+| `--cols` | `10` | Número máximo de colunas a exibir no preview. No modo vertical (>20 colunas) lista as primeiras N colunas por linha; no modo horizontal trunca a tabela. |
 
 ---
 
@@ -194,6 +204,15 @@ meta = parse_sps("sintaxe.sps")
 # Inspecionar sem gerar arquivo
 info = inspecionar_arquivo("dados.dat", aplicar_clean=True)
 # → {'rows': 242, 'max_cols': 175, 'short_rows': 241, 'empty_cols': [...], ...}
+
+# Preview do CSV (sem criar arquivo)
+from dat2csv.utils import preview_csv_preview, format_csv_table
+preview = preview_csv_preview("dados.dat", sps_path="sintaxe.sps", n=3)
+# → "id,nome,genero\n1,dois,3\n4,cinco,6\n7,oito,9"
+
+# Formatar CSV como tabela (horizontal ≤20 colunas, vertical >20 colunas)
+tabela = format_csv_table(preview, max_cols_display=10, has_header=True)
+# Com force_transpose=True: força modo vertical independente do nº de colunas
 ```
 
 ---

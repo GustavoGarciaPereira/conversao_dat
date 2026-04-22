@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 from .converter import convert
-from .utils import calcular_hash, inspecionar_arquivo, imprimir_inspecao
+from .utils import calcular_hash, inspecionar_arquivo, imprimir_inspecao, preview_csv_preview, format_csv_table
 
 
 def main() -> None:
@@ -62,7 +62,33 @@ def main() -> None:
         action="store_true",
         help="Suprime a linha de cabeçalho mesmo quando --sps é fornecido.",
     )
+    parser.add_argument(
+        "--preview",
+        nargs="?",
+        const=5,
+        type=int,
+        metavar="N",
+        help="Exibe as primeiras N linhas do CSV que seria gerado, sem criar arquivo. "
+             "Padrão: 5. Não pode ser usado junto com --inspect.",
+    )
+    parser.add_argument(
+        "--raw",
+        action="store_true",
+        help="Com --preview, imprime o CSV bruto (sem formatação de tabela).",
+    )
+    parser.add_argument(
+        "--cols",
+        type=int,
+        default=10,
+        metavar="N",
+        help="Número máximo de colunas a exibir no preview (padrão: 10). "
+             "Controla tanto o modo horizontal quanto o vertical.",
+    )
     args = parser.parse_args()
+
+    if args.preview is not None and args.inspect:
+        print("Erro: --preview não pode ser usado junto com --inspect.", file=sys.stderr)
+        sys.exit(1)
 
     if not args.input.exists():
         print(f"Erro: arquivo '{args.input}' não encontrado.", file=sys.stderr)
@@ -77,36 +103,63 @@ def main() -> None:
         imprimir_inspecao(info)
         return
 
-    if args.sps and not args.sps.exists():
-        print(f"Aviso: arquivo .sps '{args.sps}' não encontrado; convertendo sem metadados.",
-              file=sys.stderr)
-        args.sps = None
+    elif args.preview is not None:
+        if args.sps and not args.sps.exists():
+            print(f"Aviso: arquivo .sps '{args.sps}' não encontrado; convertendo sem metadados.",
+                  file=sys.stderr)
+            args.sps = None
+        preview_text = preview_csv_preview(
+            args.input,
+            output_path=None,
+            sps_path=args.sps,
+            apply_labels=args.apply_labels,
+            clean=args.clean,
+            add_header=not args.no_header,
+            encoding=args.encoding,
+            n=args.preview,
+        )
+        if args.raw:
+            print(preview_text)
+        else:
+            has_header = bool(args.sps) and not args.no_header
+            print(format_csv_table(
+                preview_text,
+                max_cols_display=args.cols,
+                has_header=has_header,
+            ))
+        return
 
-    output = args.output or args.input.with_suffix(".csv")
-    result = convert(
-        args.input,
-        output,
-        encoding=args.encoding,
-        clean=args.clean,
-        backup=not args.no_backup,
-        sps_path=args.sps,
-        apply_labels=args.apply_labels,
-        add_header=not args.no_header,
-    )
-    if result["backup"]:
-        print(f"\U0001f4e6 Backup criado: {result['backup'].name} (arquivo anterior preservado)")
-    if args.hash:
-        digest = calcular_hash(args.input)
-        print(f"\U0001f512 Hash SHA256 do original: {digest}")
-    print(f"Arquivo convertido com sucesso!")
-    print(f"  Entrada:  {args.input}")
-    print(f"  Saída:    {output}")
-    print(f"  Linhas:   {result['rows']}")
-    print(f"  Colunas:  {result['columns']}")
-    if args.clean and result.get("removed_cols"):
-        print(f"  Colunas removidas (--clean): {result['removed_cols']}")
-    if args.sps:
-        print(f"  Metadados .sps: {args.sps.name}")
+    else:
+        if args.sps and not args.sps.exists():
+            print(f"Aviso: arquivo .sps '{args.sps}' não encontrado; convertendo sem metadados.",
+                  file=sys.stderr)
+            args.sps = None
+
+        output = args.output or args.input.with_suffix(".csv")
+        result = convert(
+            args.input,
+            output,
+            encoding=args.encoding,
+            clean=args.clean,
+            backup=not args.no_backup,
+            sps_path=args.sps,
+            apply_labels=args.apply_labels,
+            add_header=not args.no_header,
+        )
+        if result["backup"]:
+            print(f"\U0001f4e6 Backup criado: {result['backup'].name} (arquivo anterior preservado)")
+        if args.hash:
+            digest = calcular_hash(args.input)
+            print(f"\U0001f512 Hash SHA256 do original: {digest}")
+        print(f"Arquivo convertido com sucesso!")
+        print(f"  Entrada:  {args.input}")
+        print(f"  Saída:    {output}")
+        print(f"  Linhas:   {result['rows']}")
+        print(f"  Colunas:  {result['columns']}")
+        if args.clean and result.get("removed_cols"):
+            print(f"  Colunas removidas (--clean): {result['removed_cols']}")
+        if args.sps:
+            print(f"  Metadados .sps: {args.sps.name}")
 
 
 if __name__ == "__main__":
