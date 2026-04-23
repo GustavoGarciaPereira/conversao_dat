@@ -285,6 +285,54 @@ dat2csv dados.dat --encoding latin-1
 
 ---
 
+## Interface gráfica
+
+O dat2csv também pode ser usado através de uma interface gráfica desktop, construída com
+**Tkinter** (biblioteca padrão do Python — sem dependências externas).
+
+### Requisitos
+
+- Python 3.10 ou superior
+- Tkinter (geralmente já incluso na instalação padrão do Python;
+  em distribuições Linux pode ser necessário instalar o pacote `python3-tk`)
+
+### Como executar
+
+```bash
+python -m dat2csv.gui
+```
+
+Se o pacote foi instalado via `pip install -e .`, o comando `dat2csv-gui` também fica
+disponível:
+
+```bash
+dat2csv-gui
+```
+
+### Funcionalidades
+
+- **Seleção de arquivos** via diálogos nativos: entrada `.dat` (obrigatório),
+  sintaxe `.sps` (opcional) e saída `.csv` (opcional; se não informado, usa `<input>.csv`)
+- **Checkboxes** para ativar as opções `--apply-labels`, `--clean`, `--no-backup` e `--hash`
+- **Botão Converter:** executa a conversão em uma thread separada — a interface não trava
+  mesmo com arquivos grandes; o resumo (linhas, colunas, backup, hash) é exibido na área de log
+- **Botão Preview:** exibe as primeiras N linhas do CSV que seria gerado (N configurável via
+  spinner ao lado do botão), sem criar arquivo, formatadas como tabela (horizontal ou vertical
+  conforme o número de colunas)
+- **Log rolável:** toda a saída de diagnóstico aparece na janela; erros são reportados em
+  caixas de diálogo
+
+### Exemplo de uso
+
+1. Execute `python -m dat2csv.gui`
+2. Clique em "Procurar…" ao lado de "Arquivo .dat" e selecione o arquivo desejado
+3. Opcional: selecione um arquivo `.sps` e marque "Aplicar rótulos do .sps"
+4. Opcional: marque "Remover colunas vazias" e/ou "Exibir hash SHA256"
+5. Ajuste o spinner "Linhas" e clique em **Preview** para visualizar o resultado antes de converter
+6. Clique em **Converter** para gerar o CSV final
+
+---
+
 ## Uso — Python
 
 ```python
