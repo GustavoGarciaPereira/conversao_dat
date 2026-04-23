@@ -38,6 +38,7 @@ conversao_dat/
 │   ├── __main__.py        # Permite execução com python -m dat2csv
 │   ├── converter.py       # _parse_dat(), _apply_value_labels(), convert()
 │   ├── cli.py             # Interface argparse; entry point do comando dat2csv
+│   ├── gui.py             # Interface gráfica desktop (Tkinter); entry point gui:main
 │   ├── utils.py           # calcular_hash(), criar_backup(), inspecionar_arquivo()
 │   └── sps.py             # parse_sps() — lê VARIABLE LABELS e VALUE LABELS do .sps
 ├── tests/
@@ -52,7 +53,7 @@ conversao_dat/
 │       ├── linhas_irregulares.dat
 │       ├── simples.sps    # Apenas VARIABLE LABELS
 │       └── com_labels.sps # VARIABLE LABELS + VALUE LABELS
-├── .coveragerc            # Exclui cli.py e __main__.py do relatório de cobertura
+├── .coveragerc            # Exclui cli.py, __main__.py e gui.py do relatório de cobertura
 ├── pyproject.toml         # Metadados, entry point, [dev] extras, [project.urls]
 ├── README.md              # Documentação voltada ao usuário final
 ├── LICENSE                # MIT
@@ -69,6 +70,7 @@ conversao_dat/
 | `utils.py` | Hash de integridade, backup com timestamp, inspeção sem saída, preview do CSV, formatação de tabela, formatação de terminal |
 | `sps.py` | Parser de sintaxe SPSS: extrai `variable_labels` e `value_labels` |
 | `cli.py` | Interface argparse, validação de argumentos, saída no terminal |
+| `gui.py` | Interface gráfica desktop (Tkinter), thread de conversão, preview via utils |
 
 ---
 
@@ -144,6 +146,11 @@ dat2csv dados.dat --inspect --clean
 
 # Com hash e sem backup
 dat2csv dados.dat saida.csv --hash --no-backup
+
+# Interface gráfica desktop
+python -m dat2csv.gui
+# ou, se instalado via pip:
+dat2csv-gui
 
 # Rodar sem instalar (útil no Windows com PowerShell)
 python -m dat2csv dados.dat
@@ -228,7 +235,7 @@ tabela = format_csv_table(preview, max_cols_display=10, has_header=True)
 ## Notas para Assistentes de IA
 
 - Manter separação clara entre módulos: `converter.py` (parse/escrita), `utils.py` (auxiliares),
-  `sps.py` (metadados SPSS), `cli.py` (interface). Não misturar responsabilidades.
+  `sps.py` (metadados SPSS), `cli.py` (interface CLI), `gui.py` (interface gráfica). Não misturar responsabilidades.
 - Ao adicionar novas funcionalidades, criar testes em `tests/` antes de considerar concluído.
 - Novas flags da CLI devem aparecer: no `--help` (argparse), na tabela de flags deste arquivo,
   na tabela do README e na `pyproject.toml` se relevante.
@@ -236,7 +243,7 @@ tabela = format_csv_table(preview, max_cols_display=10, has_header=True)
   `encoding` explícito em todas as operações de I/O.
 - O arquivo `.dat` e o `.sps` de entrada **nunca** devem ser modificados — apenas lidos.
 - `*.csv` está no `.gitignore`; arquivos de saída gerados localmente não entram no repositório.
-- Cobertura de testes deve permanecer em 100% para todos os módulos (exceto `cli.py` e
-  `__main__.py`, excluídos via `.coveragerc`).
+- Cobertura de testes deve permanecer em 100% para todos os módulos (exceto `cli.py`,
+  `__main__.py` e `gui.py`, excluídos via `.coveragerc`).
 - O parser `sps.py` é fail-soft: sempre retorna dicts (possivelmente vazios) e nunca lança
   exceção — avisa em stderr e segue em frente.

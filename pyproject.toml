@@ -36,6 +36,7 @@ Issues = "https://github.com/GustavoGarciaPereira/conversao_dat/issues"
 
 [project.scripts]
 dat2csv = "dat2csv.cli:main"
+dat2csv-gui = "dat2csv.gui:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
