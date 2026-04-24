@@ -218,15 +218,15 @@ class TestPreviewCli:
         captured = capsys.readouterr()
         assert "Erro: --preview não pode ser usado junto com --inspect." in captured.err
 
-    def test_preview_nao_cria_arquivo(self, dat_simples, tmp_path):
+    def test_preview_nao_cria_arquivo(self, dat_simples):
         """A flag --preview não deve criar arquivo de saída."""
         from dat2csv.cli import main
         import sys
 
-        output = tmp_path / "saida.csv"
-        sys.argv = ["dat2csv", str(dat_simples), "--preview", "1", str(output)]
+        default_output = dat_simples.with_suffix(".csv")
+        sys.argv = ["dat2csv", str(dat_simples), "--preview", "1"]
         main()
-        assert not output.exists()
+        assert not default_output.exists()
 
 
 class TestFormatCsvTable:
