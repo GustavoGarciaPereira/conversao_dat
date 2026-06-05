@@ -47,6 +47,31 @@ pip install --upgrade --force-reinstall --no-cache-dir git+https://github.com/Gu
 
 Após a instalação, o comando `dat2csv` estará disponível no terminal.
 
+### 🪟 Instalação no Windows
+
+Após instalar o pacote com `pip install dat2csv`, você pode usar a ferramenta de duas formas:
+
+#### 1. Via `python -m dat2csv` (recomendado)
+
+Funciona em qualquer terminal, sem necessidade de configurar o PATH. Substitua `dat2csv` por `python -m dat2csv` em qualquer comando deste guia:
+
+```
+python -m dat2csv dados.dat --inspect
+python -m dat2csv dados.dat -o resultado.csv
+```
+
+#### 2. Via comando `dat2csv` direto
+
+Para usar apenas `dat2csv` no terminal, é necessário adicionar a pasta `Scripts` do Python ao PATH do sistema:
+
+1. Durante a instalação, o `pip` exibe um aviso com o caminho, como:
+   `C:\Users\SeuNome\AppData\Local\Python\pythoncore-3.12-64\Scripts`
+2. Copie esse caminho.
+3. No Windows, abra **Configurações > Sistema > Sobre > Configurações avançadas do sistema**.
+4. Clique em **Variáveis de Ambiente**.
+5. Na variável `Path`, clique em **Novo** e cole o caminho copiado.
+6. Reinicie o terminal.
+
 ---
 
 ## Uso — linha de comando
