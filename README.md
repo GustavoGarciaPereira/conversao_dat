@@ -310,6 +310,41 @@ dat2csv dados.dat --encoding latin-1
 
 ---
 
+## Exportação para Excel
+
+Use `--excel` para gerar um arquivo `.xlsx` formatado em vez de CSV:
+
+```bash
+# Exportação básica para Excel
+dat2csv dados.dat --excel
+# Gera: dados.xlsx
+
+# Com metadados SPSS (cabeçalho bold + fundo cinza + freeze)
+dat2csv dados.dat --sps sintaxe.sps --apply-labels --excel
+
+# Caminho personalizado
+dat2csv dados.dat --excel --excel-output resultado.xlsx
+```
+
+### Instalação
+
+O suporte a Excel requer `openpyxl` (dependência opcional):
+
+```bash
+pip install dat2csv[excel]
+```
+
+Se tentar usar `--excel` sem o `openpyxl`, uma mensagem clara de erro será exibida.
+
+### Funcionalidades do Excel gerado
+
+- **Cabeçalho formatado**: negrito + fundo cinza claro
+- **Congelamento da primeira linha** (freeze panes)
+- **Auto-ajuste da largura das colunas** (com limite máximo)
+- **Backup automático** (mesmo comportamento do CSV)
+
+---
+
 ## Uso — Python
 
 ```python
@@ -328,6 +363,19 @@ result = convert(
 )
 print(result)
 # {'rows': 1280, 'columns': 147, 'backup': None}
+
+# Exportação para Excel
+result = convert("dados.dat", "resultado.xlsx", excel=True)
+print(result)
+# {'rows': 1280, 'columns': 147, 'backup': None}
+
+# Exportação para Excel com metadados SPSS
+result = convert(
+    "dados.dat", "resultado.xlsx",
+    sps_path="sintaxe.sps",
+    apply_labels=True,
+    excel=True,
+)
 
 # Com limpeza de colunas vazias
 result = convert("dados.dat", "resultado.csv", clean=True)
@@ -408,6 +456,8 @@ Exemplo de linha válida:
 | `--hash` | Exibe o hash SHA256 do arquivo de entrada |
 | `--no-backup` | Desabilita o backup automático do arquivo de saída |
 | `--encoding ENC` | Define o encoding do arquivo de entrada (padrão: `utf-8-sig`) |
+| `--excel` | Exporta para Excel (.xlsx) em vez de CSV. Requer `openpyxl` (`pip install dat2csv[excel]`). Incompatível com `--preview`. |
+| `--excel-output ARQUIVO.xlsx` | Caminho do arquivo .xlsx de saída (padrão: mesmo nome com .xlsx). Só tem efeito com `--excel`. |
 
 ---
 

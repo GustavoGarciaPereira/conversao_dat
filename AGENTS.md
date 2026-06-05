@@ -13,8 +13,8 @@ entendam rapidamente a estrutura, as convenções e as decisões de design deste
 | **Nome do repositório** | `conversao_dat` |
 | **Público-alvo** | Pesquisadores e usuários não técnicos |
 | **Python mínimo** | 3.10 |
-| **Dependências externas** | Nenhuma obrigatória; `openpyxl` (opcional, para `--excel`) |
-| **Testes** | 144 passando, cobertura 100% |
+| **Dependências externas** | Nenhuma (somente biblioteca padrão) |
+| **Testes** | 117 passando, cobertura 100% |
 
 **Propósito:** Converter arquivos `.dat` gerados por plataformas de pesquisa (LimeSurvey, SPSS,
 Sniffy) para CSV limpo. Os diferenciais em relação a um simples `split(',')` são:
@@ -26,7 +26,6 @@ Sniffy) para CSV limpo. Os diferenciais em relação a um simples `split(',')` s
 - Limpeza opcional de colunas 100% vazias (`--clean`)
 - Suporte a metadados SPSS (`--sps`): cabeçalho com nomes das variáveis e substituição de códigos por rótulos
 - Preview inteligente (`--preview`): tabela horizontal para poucos campos, modo vertical automático para datasets com mais de 20 colunas; `--cols N` controla quantas colunas exibir
-- Exportação para Excel (`--excel`): gera `.xlsx` formatado com cabeçalho em negrito, fundo cinza, freeze panes e auto-ajuste de largura
 
 ---
 
@@ -46,21 +45,16 @@ conversao_dat/
 │   ├── test_converter.py  # Testes de _parse_dat() e convert()
 │   ├── test_utils.py      # Testes de calcular_hash(), criar_backup(), inspecionar_arquivo()
 │   ├── test_sps.py        # Testes de parse_sps() e integração convert()+sps
-│   ├── test_preview.py    # Testes de preview_csv_preview() e format_csv_table()
-│   ├── test_excel.py      # Testes de export_to_excel() e flags --excel
 │   └── fixtures/          # Arquivos de exemplo usados nos testes
 │       ├── simples.dat
 │       ├── aspas_simples.dat
 │       ├── colunas_vazias.dat
 │       ├── linhas_irregulares.dat
 │       ├── simples.sps    # Apenas VARIABLE LABELS
-│       ├── com_labels.sps # VARIABLE LABELS + VALUE LABELS
-│       └── concat_labels.sps  # VARIABLE LABELS com concatenação SPSS
+│       └── com_labels.sps # VARIABLE LABELS + VALUE LABELS
 ├── .coveragerc            # Exclui cli.py e __main__.py do relatório de cobertura
 ├── pyproject.toml         # Metadados, entry point, [dev] extras, [project.urls]
 ├── README.md              # Documentação voltada ao usuário final
-├── AGENTS.md              # Apelido simbólico para CLAUDE.md
-├── REASONIX.md            # Regras operacionais para o agente Reasonix
 ├── LICENSE                # MIT
 └── CLAUDE.md              # Este arquivo
 ```
@@ -180,8 +174,6 @@ twine upload dist/*
 | `--preview` | `None` | Exibe as primeiras N linhas do CSV que seria gerado, sem criar arquivo (padrão: 5). Não pode ser usado com `--inspect`. |
 | `--raw` | `False` | Com `--preview`, imprime o CSV bruto (sem formatação de tabela). |
 | `--cols` | `10` | Número máximo de colunas a exibir no preview. No modo vertical (>20 colunas) lista as primeiras N colunas por linha; no modo horizontal trunca a tabela. |
-| `--excel` | `False` | Exporta para Excel (.xlsx) em vez de CSV. Requer `openpyxl`. Incompatível com `--preview` e `--inspect`. |
-| `--excel-output` | `None` | Caminho do arquivo .xlsx de saída (padrão: `<input>.xlsx`). Só tem efeito com `--excel`. |
 
 ---
 

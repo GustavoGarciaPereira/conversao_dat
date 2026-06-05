@@ -296,6 +296,33 @@ class TestFormatCsvTable:
         assert lines[0].startswith("+")
         assert lines[2].startswith("+")
 
+    def test_csv_all_empty_cells_returns_empty(self):
+        """CSV cujas células são todas vazias deve retornar string vazia (L272)."""
+        assert format_csv_table(",") == ""
+        assert format_csv_table(",,") == ""
+
+    def test_width_reduction_with_small_max_width(self):
+        """max_width pequeno força redução de colunas largas (L334-341 + L363)."""
+        # Três colunas: duas de 10 chars + uma de 1 char.
+        # total_width ~31 com max_width=15 → redução em cascata:
+        #   col0: 10→1 (excess 16→7), col1: 10→3 (excess 7→0),
+        #   col2: excess≤0 dispara break (L338).
+        # col0 width=1 (≤3) dispara fallback '.' (L363).
+        csv = "abcdefghij,abcdefghij,x\n1,2,3"
+        formatted = format_csv_table(csv, max_width=15)
+        assert "+" in formatted
+        top_border = formatted.splitlines()[0]
+        assert len(top_border) <= 15
+        # Fallback da célula width=1: "abcdefghij" → "."
+        assert "." in formatted
+
+    def test_horizontal_omitted_columns_message(self):
+        """Modo horizontal com max_cols_display < num_cols indica omissão (L375)."""
+        csv = "a,b,c,d,e,f,g\n1,2,3,4,5,6,7"
+        formatted = format_csv_table(csv, max_cols_display=5)
+        assert "omitidas" in formatted
+        assert "2" in formatted  # 7 colunas - 5 exibidas = 2 omitidas
+
 
 class TestFormatCsvTableMuitasColunas:
     """Testes de format_csv_table com datasets de muitas colunas (modo transposto)."""
@@ -365,6 +392,31 @@ class TestFormatCsvTableMuitasColunas:
         formatted = format_csv_table(csv_str, has_header=False)
         assert "col_1" in formatted
         assert "col_2" in formatted
+
+    def test_transpose_long_label_truncation(self):
+        """Label > max_col_width é truncado com '...' no modo transposto (L295)."""
+        long_name = "col_with_very_long_name_exceeding_thirty_chars"
+        csv_str = f"{long_name},short\n1,2"
+        formatted = format_csv_table(csv_str, force_transpose=True, has_header=True)
+        # O label original de 49 chars não deve aparecer íntegro
+        assert long_name not in formatted
+        # Deve conter "..." indicando truncamento
+        assert "..." in formatted
+        # O label truncado deve ter no máximo max_col_width (30) caracteres
+        lines = formatted.splitlines()
+        label_lines = [ln for ln in lines if " : " in ln]
+        label = label_lines[0].split(" : ")[0].strip()
+        assert len(label) <= 30
+
+    def test_transpose_long_value_truncation(self):
+        """Valor > max_col_width é truncado com '...' no modo transposto (L308)."""
+        long_value = "x" * 40
+        csv_str = f"label\n{long_value}"
+        formatted = format_csv_table(csv_str, force_transpose=True, has_header=True)
+        # O valor original de 40 chars não deve aparecer íntegro
+        assert long_value not in formatted
+        # Deve conter "..." indicando truncamento
+        assert "..." in formatted
 
 
 def test_cols_flag_cli(tmp_path, capsys):

@@ -9,7 +9,7 @@ from .utils import calcular_hash, inspecionar_arquivo, imprimir_inspecao, previe
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="dat2csv",
-        description="Converte arquivos .dat (aspas simples, vírgula) para CSV.",
+        description="Converte arquivos .dat (aspas simples, vírgula) para CSV ou Excel.",
     )
     parser.add_argument("input", type=Path, help="Arquivo .dat de entrada")
     parser.add_argument(
@@ -84,11 +84,36 @@ def main() -> None:
         help="Número máximo de colunas a exibir no preview (padrão: 10). "
              "Controla tanto o modo horizontal quanto o vertical.",
     )
+    parser.add_argument(
+        "--excel",
+        action="store_true",
+        help="Exportar para Excel (.xlsx) em vez de CSV. Requer openpyxl.",
+    )
+    parser.add_argument(
+        "--excel-output",
+        type=Path,
+        default=None,
+        metavar="ARQUIVO.xlsx",
+        help="Caminho do arquivo .xlsx de saída (padrão: mesmo nome com .xlsx). "
+             "Só tem efeito quando --excel está ativo.",
+    )
     args = parser.parse_args()
 
     if args.preview is not None and args.inspect:
         print("Erro: --preview não pode ser usado junto com --inspect.", file=sys.stderr)
         sys.exit(1)
+
+    if args.excel and args.preview is not None:
+        print("Erro: --excel não pode ser usado junto com --preview.", file=sys.stderr)
+        sys.exit(1)
+
+    if args.excel and args.inspect:
+        print("Erro: --excel não pode ser usado junto com --inspect.", file=sys.stderr)
+        sys.exit(1)
+
+    if args.excel_output and not args.excel:
+        print("Aviso: --excel-output foi ignorado porque --excel não foi usado.",
+              file=sys.stderr)
 
     if not args.input.exists():
         print(f"Erro: arquivo '{args.input}' não encontrado.", file=sys.stderr)
@@ -135,17 +160,33 @@ def main() -> None:
                   file=sys.stderr)
             args.sps = None
 
-        output = args.output or args.input.with_suffix(".csv")
-        result = convert(
-            args.input,
-            output,
-            encoding=args.encoding,
-            clean=args.clean,
-            backup=not args.no_backup,
-            sps_path=args.sps,
-            apply_labels=args.apply_labels,
-            add_header=not args.no_header,
-        )
+        if args.excel:
+            if args.excel_output:
+                output = args.excel_output
+            else:
+                output = args.input.with_suffix(".xlsx")
+            if args.output is not None:
+                print(f"Aviso: --output '{args.output}' foi ignorado porque --excel está ativo.",
+                      file=sys.stderr)
+        else:
+            output = args.output or args.input.with_suffix(".csv")
+
+        try:
+            result = convert(
+                args.input,
+                output,
+                encoding=args.encoding,
+                clean=args.clean,
+                backup=not args.no_backup,
+                sps_path=args.sps,
+                apply_labels=args.apply_labels,
+                add_header=not args.no_header,
+                excel=args.excel,
+            )
+        except ImportError as exc:
+            print(f"Erro: {exc}", file=sys.stderr)
+            sys.exit(1)
+
         if result["backup"]:
             print(f"\U0001f4e6 Backup criado: {result['backup'].name} (arquivo anterior preservado)")
         if args.hash:

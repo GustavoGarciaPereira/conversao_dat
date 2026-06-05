@@ -38,7 +38,8 @@ Issues = "https://github.com/GustavoGarciaPereira/conversao_dat/issues"
 dat2csv = "dat2csv.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+excel = ["openpyxl>=3.0"]
+dev = ["pytest>=8", "openpyxl>=3.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
