@@ -28,4 +28,7 @@ venv/
 data_dat/
 test2/
 
+.coverage
 start-claude.sh
+REASONIX.md
+*.xlsx

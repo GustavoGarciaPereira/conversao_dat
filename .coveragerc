@@ -3,6 +3,7 @@ source = dat2csv
 omit =
     dat2csv/__main__.py
     dat2csv/cli.py
+    dat2csv/gui.py
 
 [report]
 exclude_lines =
