@@ -77,6 +77,7 @@ Para usar apenas `dat2csv` no terminal, é necessário adicionar a pasta `Script
 ## Uso — linha de comando
 
 ### Conversão básica (Linux / macOS)
+<span style="color:red;">Obs.: é necessário que você rode este comando no diretório que se encontra o arquivo .dat</span>|
 
 ```bash
 dat2csv dados.dat
